@@ -1,0 +1,579 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>สมุดบันทึกสวน</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Kanit:wght@500;600;700&family=Prompt:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #F6FAF1;
+    --surface: #FFFFFF;
+    --surface-soft: #E9F4E0;
+    --surface-soft-2: #DCEFCC;
+    --primary: #2F8F5B;
+    --primary-dark: #226B44;
+    --primary-light: #E4F3E9;
+    --gold: #E4A23A;
+    --gold-bg: #FBEDD6;
+    --income: #2F8F5B;
+    --income-bg: #E1F3E7;
+    --expense: #E2635A;
+    --expense-bg: #FBE6E4;
+    --ink: #1F2A22;
+    --ink-soft: #6F7D71;
+    --line: rgba(31,42,34,0.08);
+    --line-strong: rgba(31,42,34,0.14);
+    --bar-h: 58px;
+    --r-lg: 20px;
+    --r-md: 16px;
+    --r-pill: 999px;
+  }
+  *{ box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html,body{ margin:0; padding:0; overscroll-behavior-y: contain; }
+  body{
+    background: var(--bg);
+    font-family: 'Prompt', sans-serif;
+    color: var(--ink);
+    min-height: 100vh;
+  }
+  #shell{
+    max-width: 480px;
+    margin: 0 auto;
+    min-height: 100vh;
+    background: var(--bg);
+    position: relative;
+  }
+
+  .appbar{
+    position: sticky; top:0; z-index: 20;
+    height: var(--bar-h);
+    background: var(--primary);
+    color: #fff;
+    display:flex; align-items:center; gap: 8px;
+    padding: 0 10px 0 6px;
+    box-shadow: 0 4px 14px -6px rgba(34,107,68,0.45);
+  }
+  .appbar .back{
+    width: 40px; height: 40px; border-radius: 50%;
+    background: rgba(255,255,255,0.14); border:none; color: #fff;
+    display:flex; align-items:center; justify-content:center;
+    font-size: 20px; flex-shrink: 0;
+  }
+  .appbar .back:active{ background: rgba(255,255,255,0.26); }
+  .appbar .back.spacer{ visibility: hidden; background: none; }
+  .appbar .title{
+    font-family:'Kanit', sans-serif; font-weight: 600; font-size: 17px;
+    overflow:hidden; text-overflow:ellipsis; white-space:nowrap; flex:1;
+  }
+  .appbar .subtitle{
+    font-size: 11.5px; color: rgba(255,255,255,0.75); font-weight:400; margin-top: 1px;
+  }
+
+  #content{ padding: 16px 14px 110px; min-height: calc(100vh - var(--bar-h)); }
+
+  /* ---------- lists ---------- */
+  .list{ display:flex; flex-direction:column; gap: 10px; margin-top: 4px; }
+  .card-row{
+    background: var(--surface);
+    border-radius: var(--r-lg);
+    padding: 15px 14px 15px 16px;
+    display:flex; align-items:center; gap: 10px;
+    box-shadow: 0 1px 2px rgba(31,42,34,0.05), 0 6px 16px -10px rgba(31,42,34,0.18);
+  }
+  .card-row:active{ background: var(--surface-soft); }
+  .card-row .cr-dot{
+    width: 10px; height: 10px; border-radius: 50%; background: var(--gold); flex-shrink:0;
+  }
+  .card-row .cr-info{ flex:1; min-width:0; cursor: pointer; }
+  .card-row .cr-title{ font-family:'Kanit',sans-serif; font-weight:600; font-size: 16px; }
+  .card-row .cr-meta{ font-size: 12.5px; color: var(--ink-soft); margin-top: 2px; }
+  .card-row .cr-pl{ font-family:'Kanit',sans-serif; font-weight:600; font-size: 15px; text-align:right; flex-shrink:0; cursor:pointer; }
+  .cr-pl.pos{ color: var(--income); }
+  .cr-pl.neg{ color: var(--expense); }
+  .card-row .icon-btn{
+    width: 30px; height: 30px; border-radius: 50%; border:none; flex-shrink:0;
+    background: var(--surface-soft); color: var(--ink-soft); font-size: 13.5px;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .card-row .icon-btn:active{ background: var(--surface-soft-2); }
+  .card-row .chev{ color: var(--ink-soft); font-size: 18px; flex-shrink:0; cursor:pointer; }
+
+  .empty{ text-align:center; padding: 60px 20px; color: var(--ink-soft); }
+  .empty .big{ font-family:'Kanit',sans-serif; font-weight: 500; font-size:17px; color:var(--ink); margin-bottom:6px; }
+
+  /* ---------- overview strip ---------- */
+  .strip{ display:flex; gap: 8px; margin-top: 2px; margin-bottom: 14px; }
+  .strip .s-item{
+    flex:1; background: var(--surface); border-radius: var(--r-md); padding: 12px 12px;
+    box-shadow: 0 1px 2px rgba(31,42,34,0.05);
+  }
+  .strip .s-item .l{ font-size: 11px; color: var(--ink-soft); }
+  .strip .s-item .v{ font-family:'Kanit',sans-serif; font-weight:600; font-size: 15.5px; margin-top:3px; }
+
+  /* ---------- segmented tabs ---------- */
+  .segment{
+    display:flex; background: var(--surface-soft); border-radius: var(--r-pill); padding: 4px; margin: 4px 0 16px;
+  }
+  .segment button{
+    flex:1; border:none; background: transparent; padding: 10px 6px; border-radius: var(--r-pill);
+    font-family:'Prompt',inherit; font-size: 13.5px; font-weight: 500; color: var(--ink-soft);
+  }
+  .segment button.active{ background: var(--primary); color: #fff; box-shadow: 0 3px 8px -3px rgba(34,107,68,0.55); }
+
+  /* ---------- diary / ledger entries ---------- */
+  .entry{
+    background: var(--surface); border-radius: var(--r-md); padding: 13px 15px; margin-bottom: 9px;
+    display:flex; gap: 10px; align-items:flex-start;
+    box-shadow: 0 1px 2px rgba(31,42,34,0.05);
+  }
+  .entry .e-date{
+    font-size: 11.5px; color: var(--gold); font-weight:600; white-space:nowrap; flex-shrink:0; padding-top:1px;
+    background: var(--gold-bg); padding: 3px 8px; border-radius: var(--r-pill);
+  }
+  .entry .e-body{ flex:1; font-size: 13.5px; line-height:1.5; padding-top: 3px; }
+  .entry .e-amt{ font-family:'Kanit',sans-serif; font-weight:600; font-size: 14.5px; flex-shrink:0; padding-top:3px; }
+  .e-amt.income{ color: var(--income); }
+  .e-amt.expense{ color: var(--expense); }
+  .entry .e-actions{ display:flex; flex-direction:column; gap: 4px; flex-shrink:0; }
+  .entry .e-btn{ background:none; border:none; color: var(--ink-soft); font-size: 11.5px; padding: 0; text-align:right; }
+  .entry .e-btn.edit:active{ color: var(--primary); }
+  .entry .e-btn.del:active{ color: var(--expense); }
+
+  .ledger-summary{ display:flex; gap: 8px; margin-bottom: 14px; }
+  .ledger-summary .item{ flex:1; background: var(--surface); border-radius: var(--r-md); padding: 11px 8px; text-align:center; box-shadow: 0 1px 2px rgba(31,42,34,0.05); }
+  .ledger-summary .item .l{ font-size: 11px; color: var(--ink-soft); }
+  .ledger-summary .item .v{ font-family:'Kanit',sans-serif; font-weight:600; font-size: 15px; margin-top:3px; }
+
+  /* ---------- FAB ---------- */
+  .fab{
+    position: fixed; bottom: 24px; right: calc(50% - 240px + 18px);
+    width: 58px; height: 58px; border-radius: 50%;
+    background: var(--primary); color: #fff; border:none;
+    font-size: 27px; line-height:1;
+    box-shadow: 0 10px 24px -6px rgba(34,107,68,0.6);
+    display:flex; align-items:center; justify-content:center;
+    z-index: 25;
+  }
+  .fab:active{ background: var(--primary-dark); transform: scale(0.96); }
+  @media (max-width: 480px){ .fab{ right: 18px; } }
+
+  /* ---------- bottom sheet ---------- */
+  .sheet-back{
+    position: fixed; inset:0; background: rgba(20,30,22,0.45);
+    display:flex; align-items:flex-end; justify-content:center; z-index: 50;
+  }
+  .sheet{
+    background: var(--surface); width:100%; max-width: 480px;
+    border-radius: 26px 26px 0 0; padding: 20px 20px calc(20px + env(safe-area-inset-bottom));
+    max-height: 88vh; overflow-y: auto;
+  }
+  .sheet .handle{ width: 42px; height: 5px; border-radius: 3px; background: var(--line-strong); margin: 0 auto 16px; }
+  .sheet h3{ font-family:'Kanit',sans-serif; font-weight: 600; font-size:18px; margin: 0 0 16px; }
+  .field{ margin-bottom: 13px; }
+  .field label{ display:block; font-size: 12.5px; color: var(--ink-soft); margin-bottom: 6px; }
+  .field input, .field select, .field textarea{
+    width:100%; border: 1.5px solid var(--line-strong); border-radius: var(--r-md); padding: 12px 14px;
+    font-family: 'Prompt', inherit; font-size: 15px; background: var(--bg); color: var(--ink);
+  }
+  .field input:focus, .field textarea:focus{ outline: none; border-color: var(--primary); }
+  .field textarea{ resize: vertical; min-height: 70px; }
+  .toggle-row{ display:flex; gap:8px; margin-bottom:13px; }
+  .toggle-row button{
+    flex:1; padding: 11px; border-radius: var(--r-pill); border: 1.5px solid var(--line-strong);
+    background: var(--bg); font-family:'Prompt',inherit; font-size: 13.5px; color: var(--ink-soft);
+  }
+  .toggle-row button.active.income{ background: var(--income-bg); border-color: var(--income); color: var(--income); font-weight:600; }
+  .toggle-row button.active.expense{ background: var(--expense-bg); border-color: var(--expense); color: var(--expense); font-weight:600; }
+  .sheet-actions{ display:flex; gap: 8px; margin-top: 8px; }
+  .btn{
+    font-family: 'Prompt', inherit; cursor:pointer; border:none; border-radius: var(--r-pill);
+    padding: 13px 18px; font-size: 14.5px; font-weight: 600;
+  }
+  .btn.primary{ background: var(--primary); color:#fff; flex:1; }
+  .btn.primary:active{ background: var(--primary-dark); }
+  .btn.ghost{ background: var(--surface-soft); color: var(--ink); flex:1; font-weight: 500; }
+  .btn.ghost:active{ background: var(--surface-soft-2); }
+  .btn.text-danger{ background:none; color: var(--expense); padding: 10px 6px; font-size: 13px; font-weight: 500; border-radius: var(--r-pill); }
+
+  .loading{ text-align:center; padding: 70px 20px; color: var(--ink-soft); }
+</style>
+</head>
+<body>
+<div id="shell">
+  <div class="appbar" id="appbar"></div>
+  <div id="content"><div class="loading">กำลังโหลดข้อมูล...</div></div>
+</div>
+
+<script>
+const STORAGE_KEY = 'farm-ledger-v2';
+let data = null;
+let nav = [{ screen:'years' }];
+
+function uid(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
+function esc(s){ return String(s??'').replace(/[&<>"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
+function baht(n){ const v=Number(n)||0; return v.toLocaleString('th-TH',{maximumFractionDigits:0})+' บาท'; }
+function today(){ return new Date().toISOString().slice(0,10); }
+function fmtDate(d){
+  if(!d) return '-';
+  const parts = d.split('-');
+  if(parts.length!==3) return d;
+  const months = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+  return `${Number(parts[2])} ${months[Number(parts[1])-1]} ${Number(parts[0])+543}`;
+}
+
+function cropTotals(crop){
+  let income=0, expense=0;
+  (crop.entries||[]).forEach(e=>{ if(e.type==='income') income+=Number(e.amount)||0; else expense+=Number(e.amount)||0; });
+  return { income, expense, net: income-expense };
+}
+function yearTotals(year){
+  let income=0, expense=0;
+  (year.crops||[]).forEach(c=>{ const t=cropTotals(c); income+=t.income; expense+=t.expense; });
+  return { income, expense, net: income-expense };
+}
+
+async function loadData(){
+  try{
+    const res = await window.storage.get(STORAGE_KEY, true);
+    data = res && res.value ? JSON.parse(res.value) : { years: [] };
+  }catch(e){ data = { years: [] }; }
+  render();
+}
+async function saveData(){
+  try{ await window.storage.set(STORAGE_KEY, JSON.stringify(data), true); }
+  catch(e){ console.error('save failed', e); }
+}
+
+function current(){ return nav[nav.length-1]; }
+function push(screen, extra){ nav.push(Object.assign({screen}, extra)); render(); }
+function pop(){ nav.pop(); render(); }
+function findYear(id){ return data.years.find(y=>y.id===id); }
+function findCrop(year, id){ return (year.crops||[]).find(c=>c.id===id); }
+
+function render(){
+  const appbar = document.getElementById('appbar');
+  const content = document.getElementById('content');
+  if(!data){ content.innerHTML = '<div class="loading">กำลังโหลดข้อมูล...</div>'; return; }
+
+  const s = current();
+  let title = 'สมุดบันทึกสวน', subtitle = '';
+  let showBack = nav.length > 1;
+
+  if(s.screen === 'years'){
+    title = 'สมุดบันทึกสวน';
+  } else if(s.screen === 'year'){
+    const y = findYear(s.yearId);
+    if(!y){ nav=[{screen:'years'}]; render(); return; }
+    title = 'ปี ' + y.label;
+  } else if(s.screen === 'crop'){
+    const y = findYear(s.yearId);
+    const c = y && findCrop(y, s.cropId);
+    if(!y || !c){ nav=[{screen:'years'}]; render(); return; }
+    title = c.name;
+    subtitle = 'ปี ' + y.label;
+  }
+
+  appbar.innerHTML = `
+    <button class="back ${showBack?'':'spacer'}" id="btn-back">‹</button>
+    <div style="flex:1; min-width:0;">
+      <div class="title">${esc(title)}</div>
+      ${subtitle ? `<div class="subtitle">${esc(subtitle)}</div>` : ''}
+    </div>
+  `;
+  if(showBack) document.getElementById('btn-back').onclick = pop;
+
+  if(s.screen === 'years') renderYears(content);
+  else if(s.screen === 'year') renderYear(content, s.yearId);
+  else if(s.screen === 'crop') renderCrop(content, s.yearId, s.cropId);
+}
+
+/* ---------------- YEARS SCREEN ---------------- */
+function renderYears(content){
+  const rows = data.years.length ? data.years.slice().sort((a,b)=>b.label.localeCompare(a.label)).map(y=>{
+    const t = yearTotals(y);
+    return `<div class="card-row">
+      <div class="cr-dot"></div>
+      <div class="cr-info" data-open="${y.id}">
+        <div class="cr-title">ปี ${esc(y.label)}</div>
+        <div class="cr-meta">${(y.crops||[]).length} ชนิดพืช</div>
+      </div>
+      <div class="cr-pl ${t.net>=0?'pos':'neg'}" data-open="${y.id}">${t.net>=0?'+':''}${baht(t.net)}</div>
+      <button class="icon-btn" data-edit="${y.id}">✎</button>
+      <div class="chev" data-open="${y.id}">›</div>
+    </div>`;
+  }).join('') : `<div class="empty"><div class="big">ยังไม่มีข้อมูลปี</div>กดปุ่ม + เพื่อเพิ่มปีแรก</div>`;
+
+  content.innerHTML = `<div class="list">${rows}</div>`;
+  content.querySelectorAll('[data-open]').forEach(el=>{
+    el.onclick = ()=> push('year', { yearId: el.dataset.open });
+  });
+  content.querySelectorAll('[data-edit]').forEach(el=>{
+    el.onclick = (e)=>{ e.stopPropagation(); openYearSheet(findYear(el.dataset.edit)); };
+  });
+  renderFab(()=> openYearSheet());
+}
+
+function openYearSheet(existing){
+  const isEdit = !!existing;
+  openSheet(`
+    <h3>${isEdit ? 'แก้ไขปี' : 'เพิ่มปี'}</h3>
+    <div class="field"><label>ปี (เช่น 2560)</label><input id="in-label" inputmode="numeric" placeholder="2560" value="${isEdit?esc(existing.label):''}"></div>
+    <div class="sheet-actions">
+      <button class="btn ghost" id="btn-cancel">ยกเลิก</button>
+      <button class="btn primary" id="btn-save">${isEdit?'บันทึก':'เพิ่มปี'}</button>
+    </div>
+  `, ()=>{
+    document.getElementById('btn-save').onclick = ()=>{
+      const label = document.getElementById('in-label').value.trim();
+      if(!label) return;
+      if(isEdit){ existing.label = label; }
+      else{ data.years.push({ id: uid(), label, crops: [] }); }
+      saveData(); closeSheet(); render();
+    };
+  });
+}
+
+/* ---------------- YEAR SCREEN (crops list) ---------------- */
+function renderYear(content, yearId){
+  const y = findYear(yearId);
+  const t = yearTotals(y);
+  const rows = (y.crops||[]).length ? y.crops.map(c=>{
+    const ct = cropTotals(c);
+    return `<div class="card-row">
+      <div class="cr-dot"></div>
+      <div class="cr-info" data-open="${c.id}">
+        <div class="cr-title">${esc(c.name)}</div>
+        <div class="cr-meta">${(c.steps||[]).length} บันทึกขั้นตอน · ${(c.entries||[]).length} รายการเงิน</div>
+      </div>
+      <div class="cr-pl ${ct.net>=0?'pos':'neg'}" data-open="${c.id}">${ct.net>=0?'+':''}${baht(ct.net)}</div>
+      <button class="icon-btn" data-edit="${c.id}">✎</button>
+      <div class="chev" data-open="${c.id}">›</div>
+    </div>`;
+  }).join('') : `<div class="empty"><div class="big">ยังไม่มีพืชในปีนี้</div>กดปุ่ม + เพื่อเพิ่มพืช</div>`;
+
+  content.innerHTML = `
+    <div class="strip">
+      <div class="s-item"><div class="l">รายรับรวม</div><div class="v" style="color:var(--income)">${baht(t.income)}</div></div>
+      <div class="s-item"><div class="l">รายจ่ายรวม</div><div class="v" style="color:var(--expense)">${baht(t.expense)}</div></div>
+      <div class="s-item"><div class="l">สุทธิ</div><div class="v" style="color:${t.net>=0?'var(--income)':'var(--expense)'}">${t.net>=0?'+':''}${baht(t.net)}</div></div>
+    </div>
+    <div class="list">${rows}</div>
+    <div style="margin-top:18px; display:flex; justify-content:center; gap: 6px;">
+      <button class="btn text-danger" id="btn-del-year">ลบปีนี้ทั้งหมด</button>
+    </div>
+  `;
+  content.querySelectorAll('[data-open]').forEach(el=>{
+    el.onclick = ()=> push('crop', { yearId, cropId: el.dataset.open });
+  });
+  content.querySelectorAll('[data-edit]').forEach(el=>{
+    el.onclick = (e)=>{ e.stopPropagation(); openCropSheet(yearId, findCrop(y, el.dataset.edit)); };
+  });
+  document.getElementById('btn-del-year').onclick = ()=>{
+    if(confirm(`ลบปี ${y.label} และข้อมูลพืชทั้งหมดในปีนี้?`)){
+      data.years = data.years.filter(x=>x.id!==yearId);
+      saveData(); pop();
+    }
+  };
+  renderFab(()=> openCropSheet(yearId));
+}
+
+function openCropSheet(yearId, existing){
+  const isEdit = !!existing;
+  openSheet(`
+    <h3>${isEdit ? 'แก้ไขพืช' : 'เพิ่มพืชที่ปลูก'}</h3>
+    <div class="field"><label>ชื่อพืช</label><input id="in-name" placeholder="เช่น ข้าวโพด" value="${isEdit?esc(existing.name):''}"></div>
+    <div class="sheet-actions">
+      <button class="btn ghost" id="btn-cancel">ยกเลิก</button>
+      <button class="btn primary" id="btn-save">${isEdit?'บันทึก':'เพิ่ม'}</button>
+    </div>
+  `, ()=>{
+    document.getElementById('btn-save').onclick = ()=>{
+      const name = document.getElementById('in-name').value.trim();
+      if(!name) return;
+      if(isEdit){ existing.name = name; }
+      else{
+        const y = findYear(yearId);
+        y.crops = y.crops || [];
+        y.crops.push({ id: uid(), name, steps: [], entries: [] });
+      }
+      saveData(); closeSheet(); render();
+    };
+  });
+}
+
+/* ---------------- CROP SCREEN ---------------- */
+let cropTab = 'steps';
+function renderCrop(content, yearId, cropId){
+  const y = findYear(yearId);
+  const c = findCrop(y, cropId);
+  const t = cropTotals(c);
+
+  const stepsHtml = (c.steps||[]).length ? c.steps.slice().sort((a,b)=>(b.date||'').localeCompare(a.date||'')).map(s=>`
+    <div class="entry">
+      <div class="e-date">${esc(fmtDate(s.date))}</div>
+      <div class="e-body">${esc(s.detail)}</div>
+      <div class="e-actions">
+        <button class="e-btn edit" data-kind="step" data-act="edit" data-id="${s.id}">แก้ไข</button>
+        <button class="e-btn del" data-kind="step" data-act="del" data-id="${s.id}">ลบ</button>
+      </div>
+    </div>`).join('') : `<div class="empty"><div class="big">ยังไม่มีบันทึกขั้นตอน</div>กดปุ่ม + เพื่อเริ่มบันทึก</div>`;
+
+  const entriesHtml = (c.entries||[]).length ? c.entries.slice().sort((a,b)=>(b.date||'').localeCompare(a.date||'')).map(e=>`
+    <div class="entry">
+      <div class="e-date">${esc(fmtDate(e.date))}</div>
+      <div class="e-body">${esc(e.detail||'')}</div>
+      <div class="e-amt ${e.type}">${e.type==='income'?'+':'-'}${baht(e.amount)}</div>
+      <div class="e-actions">
+        <button class="e-btn edit" data-kind="entry" data-act="edit" data-id="${e.id}">แก้ไข</button>
+        <button class="e-btn del" data-kind="entry" data-act="del" data-id="${e.id}">ลบ</button>
+      </div>
+    </div>`).join('') : `<div class="empty"><div class="big">ยังไม่มีรายการเงิน</div>กดปุ่ม + เพื่อเริ่มบันทึก</div>`;
+
+  content.innerHTML = `
+    <div class="segment">
+      <button id="tab-steps" class="${cropTab==='steps'?'active':''}">ขั้นตอนการปลูก</button>
+      <button id="tab-money" class="${cropTab==='money'?'active':''}">รายรับ-รายจ่าย</button>
+    </div>
+    <div id="tab-body">
+      ${cropTab==='steps' ? `<div class="list">${stepsHtml}</div>` : `
+        <div class="ledger-summary">
+          <div class="item"><div class="l">รายรับ</div><div class="v" style="color:var(--income)">${baht(t.income)}</div></div>
+          <div class="item"><div class="l">รายจ่าย</div><div class="v" style="color:var(--expense)">${baht(t.expense)}</div></div>
+          <div class="item"><div class="l">สุทธิ</div><div class="v" style="color:${t.net>=0?'var(--income)':'var(--expense)'}">${t.net>=0?'+':''}${baht(t.net)}</div></div>
+        </div>
+        <div class="list">${entriesHtml}</div>
+      `}
+    </div>
+    <div style="margin-top:18px; display:flex; justify-content:center;">
+      <button class="btn text-danger" id="btn-del-crop">ลบพืชนี้</button>
+    </div>
+  `;
+
+  document.getElementById('tab-steps').onclick = ()=>{ cropTab='steps'; render(); };
+  document.getElementById('tab-money').onclick = ()=>{ cropTab='money'; render(); };
+
+  content.querySelectorAll('.e-btn').forEach(btn=>{
+    btn.onclick = ()=>{
+      const kind = btn.dataset.kind, act = btn.dataset.act, id = btn.dataset.id;
+      if(kind==='step'){
+        const step = (c.steps||[]).find(x=>x.id===id);
+        if(act==='edit') openStepSheet(c, step);
+        else{ c.steps = c.steps.filter(x=>x.id!==id); saveData(); render(); }
+      } else {
+        const entry = (c.entries||[]).find(x=>x.id===id);
+        if(act==='edit') openEntrySheet(c, entry);
+        else{ c.entries = c.entries.filter(x=>x.id!==id); saveData(); render(); }
+      }
+    };
+  });
+
+  document.getElementById('btn-del-crop').onclick = ()=>{
+    if(confirm(`ลบพืช "${c.name}" และข้อมูลทั้งหมด?`)){
+      y.crops = y.crops.filter(x=>x.id!==cropId);
+      saveData(); pop();
+    }
+  };
+
+  renderFab(()=>{
+    if(cropTab==='steps') openStepSheet(c);
+    else openEntrySheet(c);
+  });
+}
+
+function openStepSheet(crop, existing){
+  const isEdit = !!existing;
+  openSheet(`
+    <h3>${isEdit ? 'แก้ไขขั้นตอนการปลูก' : 'บันทึกขั้นตอนการปลูก'}</h3>
+    <div class="field"><label>วันที่</label><input id="in-date" type="date" value="${isEdit?existing.date:today()}"></div>
+    <div class="field"><label>รายละเอียด</label><textarea id="in-detail" placeholder="ทำอะไรไปบ้าง เช่น หว่านเมล็ด, ใส่ปุ๋ยครั้งที่ 1">${isEdit?esc(existing.detail):''}</textarea></div>
+    <div class="sheet-actions">
+      <button class="btn ghost" id="btn-cancel">ยกเลิก</button>
+      <button class="btn primary" id="btn-save">บันทึก</button>
+    </div>
+  `, ()=>{
+    document.getElementById('btn-save').onclick = ()=>{
+      const detail = document.getElementById('in-detail').value.trim();
+      if(!detail) return;
+      const dateVal = document.getElementById('in-date').value || today();
+      if(isEdit){ existing.date = dateVal; existing.detail = detail; }
+      else{
+        crop.steps = crop.steps || [];
+        crop.steps.push({ id: uid(), date: dateVal, detail });
+      }
+      saveData(); closeSheet(); render();
+    };
+  });
+}
+
+function openEntrySheet(crop, existing){
+  const isEdit = !!existing;
+  let type = isEdit ? existing.type : 'expense';
+  openSheet(`
+    <h3>${isEdit ? 'แก้ไขรายการ' : 'บันทึกรายรับ-รายจ่าย'}</h3>
+    <div class="toggle-row">
+      <button type="button" class="type-btn ${type==='expense'?'active':''} expense" data-t="expense">รายจ่าย</button>
+      <button type="button" class="type-btn ${type==='income'?'active':''} income" data-t="income">รายรับ</button>
+    </div>
+    <div class="field"><label>วันที่</label><input id="in-date" type="date" value="${isEdit?existing.date:today()}"></div>
+    <div class="field"><label>รายละเอียด</label><input id="in-detail" placeholder="เช่น ค่าปุ๋ย, ขายผลผลิต" value="${isEdit?esc(existing.detail||''):''}"></div>
+    <div class="field"><label>จำนวนเงิน (บาท)</label><input id="in-amount" type="number" min="0" step="1" placeholder="0" value="${isEdit?existing.amount:''}"></div>
+    <div class="sheet-actions">
+      <button class="btn ghost" id="btn-cancel">ยกเลิก</button>
+      <button class="btn primary" id="btn-save">บันทึก</button>
+    </div>
+  `, ()=>{
+    document.querySelectorAll('.type-btn').forEach(b=>{
+      b.onclick = ()=>{
+        type = b.dataset.t;
+        document.querySelectorAll('.type-btn').forEach(x=>x.classList.remove('active'));
+        b.classList.add('active');
+      };
+    });
+    document.getElementById('btn-save').onclick = ()=>{
+      const amount = Number(document.getElementById('in-amount').value);
+      if(!amount || amount<=0) return;
+      const dateVal = document.getElementById('in-date').value || today();
+      const detailVal = document.getElementById('in-detail').value.trim();
+      if(isEdit){
+        existing.type = type; existing.amount = amount; existing.date = dateVal; existing.detail = detailVal;
+      } else {
+        crop.entries = crop.entries || [];
+        crop.entries.push({ id: uid(), type, amount, date: dateVal, detail: detailVal });
+      }
+      saveData(); closeSheet(); render();
+    };
+  });
+}
+
+/* ---------------- shared UI helpers ---------------- */
+function renderFab(onClick){
+  let fab = document.getElementById('fab');
+  if(fab) fab.remove();
+  fab = document.createElement('button');
+  fab.id = 'fab'; fab.className = 'fab'; fab.textContent = '+';
+  fab.onclick = onClick;
+  document.getElementById('shell').appendChild(fab);
+}
+
+function openSheet(innerHtml, bindFn){
+  closeSheet();
+  const back = document.createElement('div');
+  back.className = 'sheet-back'; back.id = 'sheet-back';
+  back.innerHTML = `<div class="sheet"><div class="handle"></div>${innerHtml}</div>`;
+  back.onclick = (e)=>{ if(e.target===back) closeSheet(); };
+  document.body.appendChild(back);
+  const cancelBtn = document.getElementById('btn-cancel');
+  if(cancelBtn) cancelBtn.onclick = closeSheet;
+  if(bindFn) bindFn();
+}
+function closeSheet(){
+  const el = document.getElementById('sheet-back');
+  if(el) el.remove();
+}
+
+loadData();
+</script>
+</body>
+</html>
